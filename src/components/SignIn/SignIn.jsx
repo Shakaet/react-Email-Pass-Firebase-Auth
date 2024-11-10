@@ -94,8 +94,8 @@
 
 ///  validate with req exp
 
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
-import React, { useState } from 'react';
+import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
+import React, { useRef, useState } from 'react';
 import { auth } from '../firebase2.init';
 import Home from '../Home';
 import { FaEye } from "react-icons/fa";
@@ -106,6 +106,8 @@ const SignIn = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  let emailref=useRef()
+
   let [showPass,setShowPass]=useState(false)
 
   let handleShow=()=>{
@@ -113,11 +115,42 @@ const SignIn = () => {
     setShowPass(!showPass)
   }
 
+
+  let handleForgat=()=>{
+
+    let email=(emailref.current.value)
+
+    if(!email){
+      alert("provide a email address")
+    }
+    else{
+
+      sendPasswordResetEmail(auth, email)
+      .then(() => {
+        // Password reset email sent!
+        console.log("sent reset email succesfully")
+        // ..
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // ..
+      });
+
+    }
+
+ 
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    let name=e.target.name.value
+    let photo=e.target.photo.value
     const email = e.target.email.value;
     const password = e.target.password.value;
     let terms= e.target.terms.checked
+    console.log(name,photo)
 
     // Clear messages
     setErrorMessage('');
@@ -160,6 +193,14 @@ const SignIn = () => {
            console.log("do email verified")
         });
 
+        updateProfile(auth.currentUser, {
+          displayName: name, photoURL: photo
+        }).then(() => {
+           alert("profile Update")
+        }).catch((error) => {
+          alert("profile Updated Error",error)
+        });
+
       })
       .catch((error) => {
         console.log("Error:", error.code, error.message);
@@ -170,11 +211,23 @@ const SignIn = () => {
   return (
     <div className='max-w-md mx-auto'>
       <form onSubmit={handleSubmit} className="card-body">
+      <div>
+          <label className="label">
+            <span className="label-text">Name</span>
+          </label>
+          <input type="text" name='name' placeholder="name" className="input input-bordered" required />
+        </div>
+        <div>
+          <label className="label">
+            <span className="label-text">PhotoURL</span>
+          </label>
+          <input type="text" name='photo' placeholder="photoUrl" className="input input-bordered" required />
+        </div>
         <div>
           <label className="label">
             <span className="label-text">Email</span>
           </label>
-          <input type="email" name='email' placeholder="email" className="input input-bordered" required />
+          <input type="email" ref={emailref} name='email' placeholder="email" className="input input-bordered" required />
         </div>
         <div>
          <div>
@@ -185,7 +238,7 @@ const SignIn = () => {
           <button onClick={handleShow} className='relative right-6 top-0'>{showPass ?<FaEyeSlash></FaEyeSlash>:<FaEye />}</button>
          </div>
           <label className="label">
-            <a href="#" className="label-text-alt link link-hover">Forgot password?</a>
+            <a onClick={handleForgat} href="#" className="label-text-alt link link-hover">Forgot password?</a>
 
             
             {successMessage && <p className='label-text-alt font-bold text-green-700'>{successMessage}</p>}
